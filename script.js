@@ -1,6 +1,32 @@
 const Dotenv = require("dotenv").config();
 const axios = require("axios");
 const fs = require("fs");
+const readline = require('readline');
+
+function readFileAndReturnArray(filePath) {
+  return new Promise((resolve, reject) => {
+    const lines = [];
+    
+    const readStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+    const rl = readline.createInterface({
+      input: readStream,
+      crlfDelay: Infinity
+    });
+
+    rl.on('line', (line) => {
+      lines.push(line);
+    });
+
+    rl.on('close', () => {
+      resolve(lines);
+    });
+
+    readStream.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
 
 
 const IS_AER = [
@@ -18,103 +44,7 @@ const IS_AER = [
   "guilhem.vinet@epitech.eu",
 ];
 
-const EMAILS = [
-  "adam.balfet@epitech.eu",
-  "alexandre.arnaud@epitech.eu",
-  "alexandru.gherasie@epitech.eu",
-  "ali.raad@epitech.eu",
-  "allan.branco@epitech.eu",
-  "amandine.rius@epitech.eu",
-  "amine.ben-hamza@epitech.eu",
-  "anthony.faure@epitech.eu",
-  "antoine.dufour@epitech.eu",
-  "antoine.fillaudeau@epitech.eu",
-  "anton.jourdheuil@epitech.eu",
-  "arthur.delbarre@epitech.eu",
-  "arthur.maquet@epitech.eu",
-  "arthur.pacaud@epitech.eu",
-  "arthur.pahon@epitech.eu",
-  "axel.bard-de-coutance@epitech.eu",
-  "aymeric.chaverot@epitech.eu",
-  "baptiste.leroyer@epitech.eu",
-  "bryan.zakka@epitech.eu",
-  "clement.loeuillet@epitech.eu",
-  "corentin.abriel@epitech.eu",
-  "corentin.mey@epitech.eu",
-  "dante.guillemain@epitech.eu",
-  "dylan.winter@epitech.eu",
-  "eddie.klai@epitech.eu",
-  "eric.constant@epitech.eu",
-  "erwann.laplante@epitech.eu",
-  "esteban.robin@epitech.eu",
-  "ewan.soulie@epitech.eu",
-  "floriane.peteau@epitech.eu",
-  "gaspard.bau@epitech.eu",
-  "geoffroy.luc@epitech.eu",
-  "gregoire1.biganzoli@epitech.eu",
-  "guilhem.vinet@epitech.eu",
-  "guillaume.le-coz@epitech.eu",
-  "hugo.fleury@epitech.eu",
-  "hugo.sapey-triomphe@epitech.eu",
-  "hugo1.roche@epitech.eu",
-  "ilhan.neuville@epitech.eu",
-  "jacques.marques@epitech.eu",
-  "jessica.ebely@epitech.eu",
-  "joan.thomas@epitech.eu",
-  "joshua.brionne@epitech.eu",
-  "jules.dutel@epitech.eu",
-  "justin.duc@epitech.eu",
-  "kevin.carttigueane@epitech.eu",
-  "keziah.picq@epitech.eu",
-  "kira.dodin@epitech.eu",
-  "leo.dubosclard@epitech.eu",
-  "lois.aibout@epitech.eu",
-  "lois.maneux@epitech.eu",
-  "louis.de-caumont@epitech.eu",
-  "lucas.hissinger@epitech.eu",
-  "lucas.palazuelo@epitech.eu",
-  "lucas.siraux@epitech.eu",
-  "matheo.grail@epitech.eu",
-  "mathias.andre@epitech.eu",
-  "mathis.legrand@epitech.eu",
-  "matthis.brocheton@epitech.eu",
-  "mattis.blanchet@epitech.eu",
-  "maxime.dziura@epitech.eu",
-  "maxime.gregoire@epitech.eu",
-  "maxime.le-besnerais@epitech.eu",
-  "maximilien.herbin@epitech.eu",
-  "mickael.theobald@epitech.eu",
-  "nathan.donat-filliod@epitech.eu",
-  "neil.ayeb@epitech.eu",
-  "noe.grange@epitech.eu",
-  "noeme.suisse@epitech.eu",
-  "oscar.deschamps@epitech.eu",
-  "oscar.malandain@epitech.eu",
-  "paul.ancey@epitech.eu",
-  "paul.laban@epitech.eu",
-  "philimon.rusom@epitech.eu",
-  "robin.chabert@epitech.eu",
-  "romain.cuisnier@epitech.eu",
-  "samson.dubuy@epitech.eu",
-  "theo.d-amore@epitech.eu",
-  "thobias.bonnard@epitech.eu",
-  "thomas.brossard@epitech.eu",
-  "thomas.heiles@epitech.eu",
-  "thomas.mazaud@epitech.eu",
-  "thomas.pinglot@epitech.eu",
-  "timothe.medico@epitech.eu",
-  "tom.desalmand@epitech.eu",
-  "tom.jourdan@epitech.eu",
-  "tom.roger@epitech.eu",
-  "tonin.guier@epitech.eu",
-  "valentin.dury@epitech.eu",
-  "valentin.nouri@epitech.eu",
-  "valentin.woehrel@epitech.eu",
-  "victor-michael.smith@epitech.eu",
-  "victor.massonnat@epitech.eu",
-  "virgile1.arnoux@epitech.eu",
-  "yann.demuyt@epitech.eu",
-];
+
 const TOKEN = process.env.TOKEN;
 
 const GOOD_GRADES = ["A", "B", "C", "D", "-", "Acquis"];
@@ -228,6 +158,10 @@ const CalculGPA = (modules) => {
   return total_grade / total_credit;
 };
 
+const getCampus = (notes) => {
+    return notes[0].codeinstance;
+}
+
 const getBunchOfInfo = (data, login) => {
   const COBRA_TITLE = "Epitech Diversity";
   const AMBASSADEUR_TITLE = "Promoting Epitech";
@@ -249,7 +183,7 @@ const getBunchOfInfo = (data, login) => {
   const credit_assos = getCreditFromSpecificModule(modules, ASSOS_TITLE);
 
   const is_aer = IS_AER.includes(login);
-
+    const campus = getCampus(notes);
   const personal_note = calcPersonalNote({
     gpa: gpa,
     tepitech: tepitech,
@@ -271,15 +205,24 @@ const getBunchOfInfo = (data, login) => {
     credit_assos: credit_assos,
     personal_note: personal_note,
     is_aer: is_aer,
+    campus: campus.split("-")[0],
   };
 };
 
+
 const script = async () => {
-  const promises = EMAILS.map((email) => getStudentInfoNotes(email));
-  const results = await Promise.all(promises);
+  const EMAILS = await readFileAndReturnArray("email.txt");
+  const results = await Promise.all(
+    EMAILS.map(async (login) => {
+      return await getStudentInfoNotes(login);
+    })
+  );
 
   const students = [];
   results.forEach((result, index) => {
+    if (index % 50 == 0) {
+      setTimeout(() => {}, Math.random() * 10000);
+    }
     const student = {
       login: EMAILS[index],
       ...getBunchOfInfo(result, EMAILS[index]),
@@ -287,9 +230,19 @@ const script = async () => {
     students.push(student);
   });
 
-  students.sort((a, b) => b.personal_note - a.personal_note);
+  const personalArr = students.map((student) => {
+    return {
+      login: student.login,
+      personal_note: student.personal_note,
+    };
+  })
+
+  personalArr.sort((a, b) => b.personal_note - a.personal_note);
+  students.sort((a, b) => b.gpa - a.gpa);
+
   students.forEach((student, index) => {
-    student.rank = index + 1;
+    student.GPArank = index + 1;
+    student.personal_rank = personalArr.findIndex((s) => s.login == student.login) + 1;
   });
 
   fs.writeFile("students.json", JSON.stringify(students), (err) => {

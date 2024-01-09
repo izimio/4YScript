@@ -1,49 +1,35 @@
 const Dotenv = require("dotenv").config();
 const axios = require("axios");
 const fs = require("fs");
-const readline = require('readline');
+const readline = require("readline");
 
 function readFileAndReturnArray(filePath) {
   return new Promise((resolve, reject) => {
     const lines = [];
-    
-    const readStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+
+    const readStream = fs.createReadStream(filePath, { encoding: "utf-8" });
     const rl = readline.createInterface({
       input: readStream,
-      crlfDelay: Infinity
+      crlfDelay: Infinity,
     });
 
-    rl.on('line', (line) => {
+    rl.on("line", (line) => {
       lines.push(line);
     });
 
-    rl.on('close', () => {
+    rl.on("close", () => {
       resolve(lines);
     });
 
-    readStream.on('error', (err) => {
+    readStream.on("error", (err) => {
       reject(err);
     });
   });
 }
 
-
-
 const IS_AER = [
-    "joshua.brionne@epitech.eu",
-    "baptiste.leroyer@epitech.eu",
-    "lois.maneux@epitech.eu",
-  "mathias.andre@epitech.eu",
-  "arthur.delbarre@epitech.eu",
-  "valentin.dury@epitech.eu",
-  "leo.dubosclard@epitech.eu",
-  "justin.duc@epitech.eu",
-  "thomas.mazaud@epitech.eu",
-  "paul.laban@epitech.eu",
-  "maxime.dziura@epitech.eu",
-  "guilhem.vinet@epitech.eu",
+  // { FILL ALL THE AER EMAILS HERE }
 ];
-
 
 const TOKEN = process.env.TOKEN;
 
@@ -159,8 +145,8 @@ const CalculGPA = (modules) => {
 };
 
 const getCampus = (notes) => {
-    return notes[0].codeinstance;
-}
+  return notes[0].codeinstance;
+};
 
 const getBunchOfInfo = (data, login) => {
   const COBRA_TITLE = "Epitech Diversity";
@@ -183,7 +169,7 @@ const getBunchOfInfo = (data, login) => {
   const credit_assos = getCreditFromSpecificModule(modules, ASSOS_TITLE);
 
   const is_aer = IS_AER.includes(login);
-    const campus = getCampus(notes);
+  const campus = getCampus(notes);
   const personal_note = calcPersonalNote({
     gpa: gpa,
     tepitech: tepitech,
@@ -209,40 +195,49 @@ const getBunchOfInfo = (data, login) => {
   };
 };
 
-
-const script = async () => {
-  const EMAILS = await readFileAndReturnArray("email.txt");
-  const results = await Promise.all(
-    EMAILS.map(async (login) => {
-      return await getStudentInfoNotes(login);
-    })
-  );
-
-  const students = [];
-  results.forEach((result, index) => {
-    if (index % 50 == 0) {
-      setTimeout(() => {}, Math.random() * 10000);
-    }
+const script = async (email = "") => {
+  let results = [];
+  let students = [];
+  if (email != "") {
+    results = await getStudentInfoNotes(email);
     const student = {
-      login: EMAILS[index],
-      ...getBunchOfInfo(result, EMAILS[index]),
+      login: email,
+      ...getBunchOfInfo(results, email),
     };
     students.push(student);
-  });
+  } else {
+    const EMAILS = await readFileAndReturnArray("email.txt");
+    results = await Promise.all(
+      EMAILS.map(async (login) => {
+        return await getStudentInfoNotes(login);
+      })
+    );
+    results.forEach((result, index) => {
+      if (index % 50 == 0) {
+        setTimeout(() => {}, Math.random() * 10000);
+      }
+      const student = {
+        login: EMAILS[index],
+        ...getBunchOfInfo(result, EMAILS[index]),
+      };
+      students.push(student);
+    });
+  }
 
   const personalArr = students.map((student) => {
     return {
       login: student.login,
       personal_note: student.personal_note,
     };
-  })
+  });
 
   personalArr.sort((a, b) => b.personal_note - a.personal_note);
   students.sort((a, b) => b.gpa - a.gpa);
 
   students.forEach((student, index) => {
     student.GPArank = index + 1;
-    student.personal_rank = personalArr.findIndex((s) => s.login == student.login) + 1;
+    student.personal_rank =
+      personalArr.findIndex((s) => s.login == student.login) + 1;
   });
 
   fs.writeFile("students.json", JSON.stringify(students), (err) => {
@@ -253,5 +248,20 @@ const script = async () => {
     console.log("File has been created");
   });
 };
+
+const args = process.argv.slice(2);
+console.log(args);
+
+if (args.length > 0) {
+  const emailRegex = new RegExp(
+    "^[a-zA-Z0-9._-]+@epitech.eu|epitech.eu$",
+    "g"
+  );
+  if (!emailRegex.test(args[0])) {
+    console.error("Please enter a valid email");
+    return;
+  }
+  script(args[0]);
+}
 
 script();
